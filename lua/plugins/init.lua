@@ -27,7 +27,20 @@ return {
     config = function()
       require("dap-go").setup()
     end,
-  }, -- test new blink
+  },
+
+  {
+    "mfussenegger/nvim-dap-python",
+    ft = "py",
+    dependencies = {
+      "mfussenegger/nvim-dap",
+    },
+    config = function()
+      require("dap-python").setup "uv"
+    end,
+  },
+
+  -- test new blink
   -- { import = "nvchad.blink.lazyspec" },
 
   -- {
