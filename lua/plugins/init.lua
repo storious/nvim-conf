@@ -40,6 +40,16 @@ return {
     end,
   },
 
+  -- comment highlight
+  {
+    "folke/todo-comments.nvim",
+    dependencies = { "nvim-lua/plenary.nvim" },
+    event = { "BufRead", "BufNewFile" },
+    config = function()
+      require("todo-comments").setup()
+    end,
+  },
+
   -- test new blink
   -- { import = "nvchad.blink.lazyspec" },
 

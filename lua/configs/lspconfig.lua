@@ -1,6 +1,6 @@
 require("nvchad.configs.lspconfig").defaults()
 
-local servers = { "gopls", "pylsp" }
+local servers = { "gopls", "pylsp", "protols" }
 vim.lsp.enable(servers)
 
 -- pyright config
