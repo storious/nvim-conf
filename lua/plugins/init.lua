@@ -1,6 +1,6 @@
 require "plugins.setting"
 
-local servers = { "lua_ls", "ruff" }
+local servers = { "lua_ls", "ruff", "clangd" }
 vim.lsp.enable(servers)
 
 

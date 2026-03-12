@@ -1,4 +1,5 @@
 -- lua/core/keymaps.lua
+require "core.autopairs".setup()
 
 local keymap = vim.api.nvim_set_keymap
 local opts = { noremap = true, silent = true }
@@ -63,35 +64,3 @@ vim.keymap.set("i", "<C-n>", function()
     return "<C-x><C-o>"
   end
 end, { expr = true })
-
--- auto pair
-local function autopair(open, close)
-  vim.keymap.set("i", open, function()
-    return open .. close .. "<Left>"
-  end, { expr = true })
-end
-
-local function close_pair(char)
-  vim.keymap.set("i", char, function()
-    local col = vim.api.nvim_win_get_cursor(0)[2]
-    local line = vim.api.nvim_get_current_line()
-
-    if line:sub(col + 1, col + 1) == char then
-      return "<Right>"
-    end
-
-    return char
-  end, { expr = true })
-end
-
-autopair("(", ")")
-autopair("[", "]")
-autopair("{", "}")
-autopair('"', '"')
-autopair("'", "'")
-
-close_pair(")")
-close_pair("]")
-close_pair("}")
-close_pair('"')
-close_pair("'")
