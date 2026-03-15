@@ -17,7 +17,6 @@ vim.opt.foldexpr = 'nvim_treesitter#foldexpr()'
 vim.opt.foldlevel = 99
 
 -- terminal
-
 if vim.fn.has("win32") == 1 then
   -- Windows
   vim.opt.shell = 'pwsh'
@@ -28,8 +27,8 @@ if vim.fn.has("win32") == 1 then
   vim.opt.shellpipe = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
   vim.opt.shellslash = true
 else
-  -- Linux / macOS 配置
-  vim.opt.shell = vim.env.SHELL or '/bin/bash' -- 优先使用当前环境变量里的 Shell
+  -- Linux / macOS
+  vim.opt.shell = vim.env.SHELL or '/bin/bash'
   vim.opt.shellcmdflag = '-c'
   vim.opt.shellquote = ''
   vim.opt.shellxquote = ''

@@ -13,8 +13,6 @@ local pair_map = {
 local function next_char()
   local col = vim.api.nvim_win_get_cursor(0)[2]
   local line = vim.api.nvim_get_current_line()
-  -- col 是 0-indexed，sub 是 1-indexed
-  -- col + 1 是光标所在字符，col + 2 是光标后一个字符
   return line:sub(col + 2, col + 2)
 end
 
