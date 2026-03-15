@@ -13,6 +13,7 @@ vim.g.netrw_altv = 1
 require "core.options"
 require "core.keymaps"
 require "core.autocmds"
+require "core.ui"
 
 
 -- load plugins module

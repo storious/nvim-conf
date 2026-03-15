@@ -29,7 +29,7 @@ keymap('n', '<leader>w', ':w<CR>', opts)
 
 -- terminal
 keymap('t', '<Esc><Esc>', '<C-\\><C-n>', opts)
-vim.keymap.set('n', '<leader>tt', ':terminal<CR>', { desc = 'Open terminal' })
+vim.keymap.set('n', '<leader>tt', ':tabnew | terminal<CR>', { desc = 'Open terminal' })
 vim.keymap.set('n', '<leader>tv', ':vsplit | terminal<CR>', { desc = 'Open terminal in vertical split' })
 
 -- file tree
