@@ -16,13 +16,24 @@ vim.opt.foldmethod = 'expr'
 vim.opt.foldexpr = 'nvim_treesitter#foldexpr()'
 vim.opt.foldlevel = 99
 
---terminal
--- Windows
-vim.opt.shell = 'pwsh'
-vim.opt.shellcmdflag = '-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command'
-vim.opt.shellquote = ''
-vim.opt.shellxquote = ''
-vim.opt.shellredir = '-RedirectStandardOutput %s -NoNewWindow -Wait'
-vim.opt.shellpipe = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
-vim.opt.shellslash = true
+-- terminal
 
+if vim.fn.has("win32") == 1 then
+  -- Windows
+  vim.opt.shell = 'pwsh'
+  vim.opt.shellcmdflag = '-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command'
+  vim.opt.shellquote = ''
+  vim.opt.shellxquote = ''
+  vim.opt.shellredir = '-RedirectStandardOutput %s -NoNewWindow -Wait'
+  vim.opt.shellpipe = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
+  vim.opt.shellslash = true
+else
+  -- Linux / macOS 配置
+  vim.opt.shell = vim.env.SHELL or '/bin/bash' -- 优先使用当前环境变量里的 Shell
+  vim.opt.shellcmdflag = '-c'
+  vim.opt.shellquote = ''
+  vim.opt.shellxquote = ''
+  vim.opt.shellredir = '>%s 2>&1'
+  vim.opt.shellpipe = '2>&1| tee %s'
+  vim.opt.shellslash = false
+end
