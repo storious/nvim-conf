@@ -22,14 +22,3 @@ vim.api.nvim_create_autocmd("LspAttach", {
     vim.bo[args.buf].omnifunc = "v:lua.vim.lsp.omnifunc"
   end,
 })
-
-vim.api.nvim_create_autocmd("InsertCharPre", {
-  callback = function()
-    local char = vim.v.char
-    if char == '"' then
-      vim.v.char = '""'
-    elseif char == "'" then
-      vim.v.char = "''"
-    end
-  end,
-})
