@@ -5,34 +5,40 @@ local keymap = vim.api.nvim_set_keymap
 local opts = { noremap = true, silent = true }
 
 -- window naviagttion
-keymap('n', '<C-h>', '<C-w>h', opts)
-keymap('n', '<C-j>', '<C-w>j', opts)
-keymap('n', '<C-k>', '<C-w>k', opts)
-keymap('n', '<C-l>', '<C-w>l', opts)
+keymap('n', '<M-h>', '<C-w>h', opts)
+keymap('n', '<M-j>', '<C-w>j', opts)
+keymap('n', '<M-k>', '<C-w>k', opts)
+keymap('n', '<M-l>', '<C-w>l', opts)
 
--- buffer naviagtion
-keymap('n', '<Tab>', ':bnext<CR>', opts)
-keymap('n', '<S-Tab>', ':bprevious<CR>', opts)
-keymap('n', '<leader>x', ':bdelete!<CR>', opts)
+-- buffer navigation
+vim.keymap.set('n', ']b', ':bnext<CR>', { desc = 'Next buffer' })
+vim.keymap.set('n', '[b', ':bprevious<CR>', { desc = 'Previous buffer' })
+vim.keymap.set('n', '<leader>x', ':bdelete!<CR>', { desc = 'Close buffer' })
+
+-- tab management
+vim.keymap.set('n', '<Tab>', ':tabnext<CR>', { desc = 'Next tab' })
+vim.keymap.set('n', '<S-Tab>', ':tabprevious<CR>', { desc = 'Previous tab' })
+vim.keymap.set('n', '<leader>tn', ':tabnew<CR>', { desc = 'New tab' })
+vim.keymap.set('n', '<leader>tc', ':tabclose<CR>', { desc = 'Close tab' })
+vim.keymap.set('n', '<leader>to', ':tabonly<CR>', { desc = 'Close other tabs' })
+vim.keymap.set('n', '<leader>tmp', ':-tabmove<CR>', { desc = 'Move tab left' })
+vim.keymap.set('n', '<leader>tmn', ':+tabmove<CR>', { desc = 'Move tab right' })
 
 -- file save
 keymap('n', '<leader>w', ':w<CR>', opts)
 
 -- terminal
 keymap('t', '<Esc><Esc>', '<C-\\><C-n>', opts)
-keymap('n', '<leader>t', ':terminal<CR>', opts)
+vim.keymap.set('n', '<leader>tt', ':terminal<CR>', { desc = 'Open terminal' })
+vim.keymap.set('n', '<leader>tv', ':vsplit | terminal<CR>', { desc = 'Open terminal in vertical split' })
 
--- file/plugin
-vim.keymap.set('n', '<leader>e', ':lua MiniFiles.open()<CR>', { desc = 'open file explorer' })
-vim.keymap.set('n', '<leader>f', ':Pick files<CR>', { desc = 'open file picker' })
-vim.keymap.set('n', '<leader>h', ':Pick help<CR>', { desc = 'open help picker' })
-vim.keymap.set('n', '<leader>b', ':Pick buffers<CR>', { desc = 'open buffer picker' })
-vim.keymap.set('n', '<leader>dd', vim.diagnostic.open_float, { desc = 'diagnostic messages' })
+-- file tree
+vim.keymap.set('n', '<leader>e', ':Lexplore<CR>', { desc = 'Open file explorer' })
 
 -- file format
 vim.keymap.set('n', '<leader>fm', function()
   vim.lsp.buf.format()
-end, { desc = 'format' })
+end, { desc = 'Format' })
 
 -- LSP
 vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { desc = 'Go to definition' })
@@ -43,18 +49,19 @@ vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, { desc = 'Rename symbol' }
 vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, { desc = 'LSP code action' })
 
 -- diagnostic
+vim.keymap.set('n', '<leader>dd', vim.diagnostic.open_float, { desc = 'Diagnostic messages' })
 vim.keymap.set('n', '[d', function()
   vim.diagnostic.jump({ wrap = true, count = -1 })
-end, { desc = 'prev diagnostic' })
+end, { desc = 'Prev diagnostic' })
 vim.keymap.set('n', ']d', function()
   vim.diagnostic.jump({ wrap = true, count = 1 })
-end, { desc = 'next diagnostic' })
+end, { desc = 'Next diagnostic' })
 
 
--- system parse board
-vim.keymap.set({ 'n', 'v' }, '<C-c>', '"+y', { desc = 'copy to system clipboard' })
-vim.keymap.set({ 'n', 'v' }, '<C-x>', '"+d', { desc = 'cut to system clipboard' })
-vim.keymap.set({ 'n', 'v' }, '<C-p>', '"+p', { desc = 'paste to system clipboard' })
+-- system clipboard
+vim.keymap.set({ 'n', 'v' }, '<C-c>', '"+y', { desc = 'Copy to system clipboard' })
+vim.keymap.set({ 'n', 'v' }, '<C-x>', '"+d', { desc = 'Cut to system clipboard' })
+vim.keymap.set({ 'n', 'v' }, '<C-p>', '"+p', { desc = 'Paste to system clipboard' })
 
 -- code complete
 vim.keymap.set("i", "<C-n>", function()

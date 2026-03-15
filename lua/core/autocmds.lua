@@ -22,3 +22,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
     vim.bo[args.buf].omnifunc = "v:lua.vim.lsp.omnifunc"
   end,
 })
+
+-- important!!!!
+vim.api.nvim_create_user_command('Q', 'q', {})
+vim.api.nvim_create_user_command('W', 'w', {})
