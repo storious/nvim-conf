@@ -61,6 +61,7 @@ A simple Neovim configuration for personal development.
 | `<M-h/j/k/l>` | Navigate windows |
 | `<leader>tt` | Open terminal in new tab |
 | `<leader>tv` | Open terminal in vertical split |
+| `<M-i>`      | Toggle float terminal |
 | `<Esc><Esc>` | Exit terminal mode |
 ### LSP & Diagnostic
 | Key | Action |
