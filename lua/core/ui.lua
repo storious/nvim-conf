@@ -147,3 +147,20 @@ vim.api.nvim_create_autocmd({ "TabEnter", "TabLeave", "TabNew", "TabClosed" }, {
 })
 
 if vim.fn.tabpagenr('$') > 1 then vim.o.showtabline = 2 else vim.o.showtabline = 0 end
+
+
+local float_bg = "#1e1e1e"
+
+-- 1. Float window
+vim.api.nvim_set_hl(0, "NormalFloat", {
+  bg = float_bg,
+  fg = "#f8f8f2",
+  blend = 0
+})
+
+-- 2. border
+vim.api.nvim_set_hl(0, "FloatBorder", {
+  bg = float_bg,
+  fg = "#66d9ef",
+  blend = 0
+})

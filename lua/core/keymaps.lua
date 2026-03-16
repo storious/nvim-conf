@@ -35,6 +35,9 @@ vim.keymap.set('n', '<leader>w', ':w<CR>', { desc = 'Save file', silent = true }
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode', silent = true })
 vim.keymap.set('n', '<leader>tt', ':tabnew | terminal<CR>', { desc = 'Open terminal in new tab', silent = true })
 vim.keymap.set('n', '<leader>tv', ':vsplit | terminal<CR>', { desc = 'Open terminal in vertical split', silent = true })
+-- load terminal plugin
+local terminal = require "plugins.terminal"
+vim.keymap.set({ "n", "t" }, "<M-i>", terminal.toggle, { desc = "Toggle Float Terminal" })
 
 -- file tree
 vim.keymap.set('n', '<leader>e', ':Lexplore<CR>', { desc = 'Open file explorer', silent = true })

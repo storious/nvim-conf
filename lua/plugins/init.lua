@@ -2,9 +2,6 @@
 local servers = require("plugins.servers")
 local M = {}
 
--- local servers = { "lua_ls", "ruff", "clangd" }
--- vim.lsp.enable(servers)
-
 vim.lsp.inlay_hint.enable(true)
 
 vim.diagnostic.config({
@@ -57,7 +54,7 @@ function M.setup_lazy()
           goto continue
         end
 
-        if not vim.tbl_contains(s.filetypes, ft) then
+        if not s.filetypes or not vim.tbl_contains(s.filetypes, ft) then
           goto continue
         end
 

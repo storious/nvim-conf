@@ -17,10 +17,11 @@ return {
       },
     },
   },
-  --{
-  --  name = "clangd",
-  --  filetypes = { "c", "cpp" },
-  --  cmd = { "clangd" },
-  --  root_markers = { ".clangd", "compile_commands.json", ".git" },
-  --},
+
+  {
+    name = "clangd",
+    filetypes = { "c", "cpp", "cc", "cxx", "ccm", "cppm", "h", "hh", "hpp" },
+    cmd = { "clangd" },
+    root_markers = { ".clangd", "compile_commands.json", ".git" },
+  },
 }
