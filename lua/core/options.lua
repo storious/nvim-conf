@@ -15,6 +15,8 @@ vim.opt.incsearch = true
 vim.opt.foldmethod = 'expr'
 vim.opt.foldexpr = 'nvim_treesitter#foldexpr()'
 vim.opt.foldlevel = 99
+vim.opt.showmode = false
+vim.opt.showcmd = false
 
 -- terminal
 if vim.fn.has("win32") == 1 then
