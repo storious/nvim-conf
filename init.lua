@@ -1,6 +1,7 @@
 -- set <leader> as space
 vim.g.mapleader = ' '
 vim.cmd('colorscheme unokai')
+require "core.ui"
 
 -- file tree
 vim.g.netrw_liststyle = 3
@@ -12,8 +13,8 @@ vim.g.netrw_altv = 1
 require "core.options"
 require "core.keymaps"
 require "core.autocmds"
-require "core.ui"
 
 
 -- load plugins module
-require "plugins"
+require "plugins".setup_lazy()
+require("plugins.autopairs").setup()

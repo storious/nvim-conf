@@ -121,15 +121,13 @@ _G.TabLine = function()
       file_name = "[No Buf]"
     end
 
-    -- 高亮设置
     local hl = ""
     if i == current_tab then
-      hl = "%#SLModeNormal#" -- 激活: 青色背景
+      hl = "%#SLModeNormal#"
     else
-      hl = "%#StatusLine#"   -- 未激活: 默认背景
+      hl = "%#StatusLine#"
     end
 
-    -- 拼接
     s = s .. hl .. "%" .. i .. "T" .. " " .. i .. ": " .. file_name .. " %T"
   end
 

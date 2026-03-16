@@ -1,5 +1,4 @@
 -- lua/core/keymaps.lua
-require("core.autopairs").setup()
 
 -- window navigation
 vim.keymap.set('n', '<M-h>', '<C-w>h', { desc = 'Move to left window', silent = true })
