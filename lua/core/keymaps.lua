@@ -9,6 +9,7 @@ vim.keymap.set('n', '<M-l>', '<C-w>l', { desc = 'Move to right window', silent =
 -- buffer navigation
 vim.keymap.set('n', ']b', ':bnext<CR>', { desc = 'Next buffer', silent = true })
 vim.keymap.set('n', '[b', ':bprevious<CR>', { desc = 'Previous buffer', silent = true })
+vim.keymap.set('n', '<leader>r', ':checktime<CR>', { desc = 'Previous buffer', silent = true })
 
 -- buffer close
 vim.keymap.set('n', '<leader>x', function()
@@ -27,6 +28,12 @@ vim.keymap.set('n', '<leader>tc', ':tabclose<CR>', { desc = 'Close tab', silent 
 vim.keymap.set('n', '<leader>to', ':tabonly<CR>', { desc = 'Close other tabs', silent = true })
 vim.keymap.set('n', '<leader>tmp', ':-tabmove<CR>', { desc = 'Move tab left', silent = true })
 vim.keymap.set('n', '<leader>tmn', ':+tabmove<CR>', { desc = 'Move tab right', silent = true })
+
+-- tab jump: <leader>1~9 to tab 1~9，<leader>0 to tab 10
+for i = 1, 9 do
+  vim.keymap.set('n', '<leader>' .. i, i .. 'gt', { desc = 'Jump to tab ' .. i, silent = true })
+end
+vim.keymap.set('n', '<leader>0', '10gt', { desc = 'Jump to tab 10', silent = true })
 
 -- file save
 vim.keymap.set('n', '<leader>w', ':w<CR>', { desc = 'Save file', silent = true })
