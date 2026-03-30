@@ -8,17 +8,11 @@ local function setup_colors()
   -- Monokai Classic Color Palette
   local colors = {
     normal   = { bg = "#66d9ef", fg = "#272822" }, -- Cyan bg, Dark text
-
     insert   = { bg = "#a6e22e", fg = "#272822" }, -- Green bg, Dark text
-
     visual   = { bg = "#ae81ff", fg = "#272822" }, -- Purple bg, Dark text
-
     command  = { bg = "#fd971f", fg = "#272822" }, -- Orange bg, Dark text
-
     replace  = { bg = "#f92672", fg = "#272822" }, -- Red/Pink bg, Dark text
-
     terminal = { bg = "#75715e", fg = "#f8f8f2" }, -- Grey bg, Light text
-
     inactive = { bg = "NONE", fg = "#75715e" },
   }
 
@@ -29,6 +23,12 @@ local function setup_colors()
   vim.api.nvim_set_hl(0, "SLModeCommand", { bg = colors.command.bg, fg = colors.command.fg, bold = true })
   vim.api.nvim_set_hl(0, "SLModeReplace", { bg = colors.replace.bg, fg = colors.replace.fg, bold = true })
   vim.api.nvim_set_hl(0, "SLModeTerminal", { bg = colors.terminal.bg, fg = colors.terminal.fg, bold = true })
+
+  -- Git Status & Branch Highlights (Monokai Colors)
+  vim.api.nvim_set_hl(0, "SLGitBranch", { fg = "#66d9ef", bg = "NONE" }) -- Cyan for branch name
+  vim.api.nvim_set_hl(0, "SLGitAdd", { fg = "#a6e22e", bg = "NONE" })    -- Green
+  vim.api.nvim_set_hl(0, "SLGitChange", { fg = "#e6db74", bg = "NONE" }) -- Yellow
+  vim.api.nvim_set_hl(0, "SLGitDel", { fg = "#f92672", bg = "NONE" })    -- Red
 end
 
 -- Run setup
@@ -39,6 +39,27 @@ vim.api.nvim_create_autocmd("ColorScheme", {
   pattern = "*",
   callback = setup_colors,
 })
+
+-- Git branch status
+local function get_git_info()
+  local dict = vim.b.gitsigns_status_dict
+  if not dict or not dict.head then return "" end
+
+  local result = "%#SLGitBranch#" .. " \u{e725} " .. dict.head .. " "
+
+  if dict.added and dict.added > 0 then
+    result = result .. "%#SLGitAdd#" .. " +" .. dict.added
+  end
+  if dict.changed and dict.changed > 0 then
+    result = result .. "%#SLGitChange#" .. " ~" .. dict.changed
+  end
+  if dict.removed and dict.removed > 0 then
+    result = result .. "%#SLGitDel#" .. " -" .. dict.removed
+  end
+
+  result = result .. "%#StatusLine# "
+  return result
+end
 
 -- 3. Statusline content
 _G.StatusLine = function()
@@ -55,7 +76,7 @@ _G.StatusLine = function()
     ['ix']  = { name = 'INSERT', hl = 'SLModeInsert' },
     ['v']   = { name = 'VISUAL', hl = 'SLModeVisual' },
     ['V']   = { name = 'V-LINE', hl = 'SLModeVisual' },
-    ['']    = { name = 'V-BLOCK', hl = 'SLModeVisual' },
+    ['\22'] = { name = 'V-BLOCK', hl = 'SLModeVisual' },
     ['c']   = { name = 'COMMAND', hl = 'SLModeCommand' },
     ['R']   = { name = 'REPLACE', hl = 'SLModeReplace' },
     ['t']   = { name = 'TERMINAL', hl = 'SLModeTerminal' },
@@ -81,6 +102,7 @@ _G.StatusLine = function()
     "%#StatusLine#",         -- Reset highlight
     " ", path_display, " ",  -- [Replaced %f] Display new path format
     "%h%m%r",                -- Help, Modified, Read-only flags
+    get_git_info(),          -- Add Git branch + status
     "%=",                    -- Right align
     "%#LineNr#",             -- Position highlight
     " %l:%c  ",              -- Line and column
@@ -96,7 +118,7 @@ vim.api.nvim_set_hl(0, "StatusLine", { bg = normal_bg, fg = "#888888" })
 -- Remove underline if you prefer a flat look
 vim.api.nvim_set_hl(0, "StatusLine", { bg = normal_bg, fg = "#888888", underline = false })
 
--- 4. Custom Tabline
+-- 5. Custom Tabline
 _G.TabLine = function()
   local s = ""
   local current_tab = vim.fn.tabpagenr()
@@ -104,9 +126,7 @@ _G.TabLine = function()
 
   for i = 1, total_tabs do
     local winnr = vim.fn.tabpagewinnr(i)
-
     local buflist = vim.fn.tabpagebuflist(i)
-
     local bufnr = buflist[winnr]
 
     local file_name = ""
@@ -135,7 +155,8 @@ _G.TabLine = function()
 end
 
 vim.o.tabline = "%{%v:lua.TabLine()%}"
--- 5. auto hidden/show Tabline
+
+-- 6. auto hidden/show Tabline
 vim.api.nvim_create_autocmd({ "TabEnter", "TabLeave", "TabNew", "TabClosed" }, {
   callback = function()
     if vim.fn.tabpagenr('$') > 1 then
@@ -151,14 +172,14 @@ if vim.fn.tabpagenr('$') > 1 then vim.o.showtabline = 2 else vim.o.showtabline =
 
 local float_bg = "#1e1e1e"
 
--- 1. Float window
+-- 7. Float window
 vim.api.nvim_set_hl(0, "NormalFloat", {
   bg = float_bg,
   fg = "#f8f8f2",
   blend = 0
 })
 
--- 2. border
+-- 8. border
 vim.api.nvim_set_hl(0, "FloatBorder", {
   bg = float_bg,
   fg = "#66d9ef",

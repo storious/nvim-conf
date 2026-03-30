@@ -47,7 +47,9 @@ local terminal = require "plugins.terminal"
 vim.keymap.set({ "n", "t" }, "<M-i>", terminal.toggle, { desc = "Toggle Float Terminal" })
 
 -- file tree
-vim.keymap.set('n', '<leader>e', ':Lexplore<CR>', { desc = 'Open file explorer', silent = true })
+vim.keymap.set("n", "<leader>e", function()
+	require("nvim-tree.api").tree.toggle()
+end, { desc = "Toggle NvimTree" })
 
 -- file format
 vim.keymap.set('n', '<leader>fm', function()
@@ -64,9 +66,15 @@ vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, { desc = 'LSP code ac
 
 -- diagnostic
 vim.keymap.set('n', '<leader>dd', vim.diagnostic.open_float, { desc = 'Show diagnostic messages', silent = true })
+
+vim.keymap.set("n", "<leader>q", function() 
+  vim.diagnostic.setloclist({ open = true }) 
+end, { desc = "Open diagnostic list" })
+
 vim.keymap.set('n', '[d', function()
   vim.diagnostic.jump({ wrap = true, count = -1 })
 end, { desc = 'Previous diagnostic', silent = true })
+
 vim.keymap.set('n', ']d', function()
   vim.diagnostic.jump({ wrap = true, count = 1 })
 end, { desc = 'Next diagnostic', silent = true })
@@ -75,12 +83,3 @@ end, { desc = 'Next diagnostic', silent = true })
 vim.keymap.set({ 'n', 'v' }, '<C-c>', '"+y', { desc = 'Copy to system clipboard', silent = true })
 vim.keymap.set({ 'n', 'v' }, '<C-x>', '"+d', { desc = 'Cut to system clipboard', silent = true })
 vim.keymap.set({ 'n', 'v' }, '<C-p>', '"+p', { desc = 'Paste from system clipboard', silent = true })
-
--- code complete
-vim.keymap.set("i", "<C-n>", function()
-  if vim.fn.pumvisible() == 1 then
-    return "<C-n>"
-  else
-    return "<C-x><C-o>"
-  end
-end, { expr = true, silent = true })

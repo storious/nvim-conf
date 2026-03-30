@@ -16,5 +16,4 @@ require "core.autocmds"
 
 
 -- load plugins module
-require "plugins".setup_lazy()
-require("plugins.autopairs").setup()
+require "plugins"

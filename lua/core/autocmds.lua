@@ -1,4 +1,3 @@
--- autocmd --
 -- auto format on saved
 vim.api.nvim_create_autocmd('BufWritePre', {
   callback = function()
@@ -13,13 +12,6 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   group = vim.api.nvim_create_augroup('highlight-yank', { clear = true }),
   callback = function()
     vim.highlight.on_yank({ timeout = 500 })
-  end,
-})
-
--- lsp complete
-vim.api.nvim_create_autocmd("LspAttach", {
-  callback = function(args)
-    vim.bo[args.buf].omnifunc = "v:lua.vim.lsp.omnifunc"
   end,
 })
 
