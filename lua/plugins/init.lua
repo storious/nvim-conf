@@ -5,6 +5,7 @@ vim.pack.add({
   "https://www.github.com/echasnovski/mini.nvim",
   "https://www.github.com/ibhagwan/fzf-lua",
   "https://www.github.com/nvim-tree/nvim-tree.lua",
+  "https://github.com/sphamba/smear-cursor.nvim",
   {
     src = "https://github.com/nvim-treesitter/nvim-treesitter",
     branch = "main",
@@ -207,3 +208,10 @@ local servers = { "lua_ls", "clangd" }
 
 vim.lsp.enable(servers)
 
+
+--- cursor
+require("smear_cursor").setup({
+  stiffness = 0.8,
+  trailing_stiffness = 0.5,
+  distance_stop_animating = 0.5
+})

@@ -18,6 +18,12 @@ vim.opt.foldlevel = 99
 vim.opt.showmode = false
 vim.opt.showcmd = false
 
+vim.opt.wildmenu = true                -- tab completion
+vim.opt.wildmode = "longest:full,full" -- complete longest common match, full completion list, cycle through with Tab
+vim.opt.diffopt:append("linematch:60") -- improve diff display
+vim.opt.redrawtime = 10000             -- increase neovim redraw tolerance
+vim.opt.maxmempattern = 20000          -- increase max memory
+
 -- terminal
 if vim.fn.has("win32") == 1 then
   -- Windows

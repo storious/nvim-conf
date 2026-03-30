@@ -1,10 +1,15 @@
 -- lua/core/keymaps.lua
 
 -- window navigation
-vim.keymap.set('n', '<M-h>', '<C-w>h', { desc = 'Move to left window', silent = true })
-vim.keymap.set('n', '<M-j>', '<C-w>j', { desc = 'Move to below window', silent = true })
-vim.keymap.set('n', '<M-k>', '<C-w>k', { desc = 'Move to above window', silent = true })
-vim.keymap.set('n', '<M-l>', '<C-w>l', { desc = 'Move to right window', silent = true })
+vim.keymap.set('n', '<C-h>', '<C-w>h', { desc = 'Move to left window', silent = true })
+vim.keymap.set('n', '<C-j>', '<C-w>j', { desc = 'Move to below window', silent = true })
+vim.keymap.set('n', '<C-k>', '<C-w>k', { desc = 'Move to above window', silent = true })
+vim.keymap.set('n', '<C-l>', '<C-w>l', { desc = 'Move to right window', silent = true })
+
+vim.keymap.set("n", "<M-j>", ":m .+1<CR>==", { desc = "Move line down" })
+vim.keymap.set("n", "<M-k>", ":m .-2<CR>==", { desc = "Move line up" })
+vim.keymap.set("v", "<M-j>", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
+vim.keymap.set("v", "<M-k>", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
 
 -- buffer navigation
 vim.keymap.set('n', ']b', ':bnext<CR>', { desc = 'Next buffer', silent = true })
@@ -42,13 +47,14 @@ vim.keymap.set('n', '<leader>w', ':w<CR>', { desc = 'Save file', silent = true }
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode', silent = true })
 vim.keymap.set('n', '<leader>tt', ':tabnew | terminal<CR>', { desc = 'Open terminal in new tab', silent = true })
 vim.keymap.set('n', '<leader>tv', ':vsplit | terminal<CR>', { desc = 'Open terminal in vertical split', silent = true })
+
 -- load terminal plugin
 local terminal = require "plugins.terminal"
 vim.keymap.set({ "n", "t" }, "<M-i>", terminal.toggle, { desc = "Toggle Float Terminal" })
 
 -- file tree
 vim.keymap.set("n", "<leader>e", function()
-	require("nvim-tree.api").tree.toggle()
+  require("nvim-tree.api").tree.toggle()
 end, { desc = "Toggle NvimTree" })
 
 -- file format
@@ -67,8 +73,8 @@ vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, { desc = 'LSP code ac
 -- diagnostic
 vim.keymap.set('n', '<leader>dd', vim.diagnostic.open_float, { desc = 'Show diagnostic messages', silent = true })
 
-vim.keymap.set("n", "<leader>q", function() 
-  vim.diagnostic.setloclist({ open = true }) 
+vim.keymap.set("n", "<leader>q", function()
+  vim.diagnostic.setloclist({ open = true })
 end, { desc = "Open diagnostic list" })
 
 vim.keymap.set('n', '[d', function()
