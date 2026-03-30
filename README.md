@@ -2,8 +2,9 @@
 # Simple Neovim Config
 A simple Neovim configuration for personal development.
 ## Requirements
-*   **Neovim** (v0.11.0+)
+*   **Neovim** (v0.12.0+)
 *   **Git**
+*   **fzf**
 *   **PowerShell 7+** (Only for Windows users).
 ## Quickstart
 ### Windows
