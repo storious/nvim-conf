@@ -1,5 +1,27 @@
 -- lua/core/keymaps.lua
 
+-- The bundled matchit plugin costs several milliseconds during startup.
+-- Preserve its extended %, g%, [% and ]% behavior, but pay that cost only on
+-- the first use.
+local function lazy_matchit(lhs)
+  return function()
+    vim.g.loaded_matchit = nil
+    vim.cmd.packadd("matchit")
+    vim.api.nvim_feedkeys(vim.keycode(lhs), "m", false)
+  end
+end
+
+for _, lhs in ipairs({ "%", "g%", "[%", "]%" }) do
+  vim.keymap.set({ "n", "x", "o" }, lhs, lazy_matchit(lhs), {
+    desc = "Extended matching (lazy)",
+    silent = true,
+  })
+end
+vim.keymap.set("x", "a%", lazy_matchit("a%"), {
+  desc = "Around matching block (lazy)",
+  silent = true,
+})
+
 -- window navigation
 vim.keymap.set('n', '<C-h>', '<C-w>h', { desc = 'Move to left window', silent = true })
 vim.keymap.set('n', '<C-j>', '<C-w>j', { desc = 'Move to below window', silent = true })
@@ -26,9 +48,9 @@ vim.keymap.set('n', '<leader>x', function()
 end, { desc = 'Close buffer (force for terminal)', silent = true })
 
 -- tab management
-vim.keymap.set('n', '<Tab>', ':tabnext<CR>', { desc = 'Next tab', silent = true })
-vim.keymap.set('n', '<S-Tab>', ':tabprevious<CR>', { desc = 'Previous tab', silent = true })
-vim.keymap.set('n', '<leader>tn', ':tabnew<CR>', { desc = 'New tab', silent = true })
+vim.keymap.set('n', '<leader>tn', ':tabnext<CR>', { desc = 'Next tab', silent = true })
+vim.keymap.set('n', '<leader>tp', ':tabprevious<CR>', { desc = 'Previous tab', silent = true })
+vim.keymap.set('n', '<leader>tb', ':tabnew<CR>', { desc = 'New tab', silent = true })
 vim.keymap.set('n', '<leader>tc', ':tabclose<CR>', { desc = 'Close tab', silent = true })
 vim.keymap.set('n', '<leader>to', ':tabonly<CR>', { desc = 'Close other tabs', silent = true })
 vim.keymap.set('n', '<leader>tmp', ':-tabmove<CR>', { desc = 'Move tab left', silent = true })
@@ -48,30 +70,31 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode', 
 vim.keymap.set('n', '<leader>tt', ':tabnew | terminal<CR>', { desc = 'Open terminal in new tab', silent = true })
 vim.keymap.set('n', '<leader>tv', ':vsplit | terminal<CR>', { desc = 'Open terminal in vertical split', silent = true })
 
--- load terminal plugin
-local terminal = require "plugins.terminal"
-vim.keymap.set({ "n", "t" }, "<M-i>", terminal.toggle, { desc = "Toggle Float Terminal" })
+vim.keymap.set({ "n", "t" }, "<M-i>", function()
+  require("plugins.terminal").toggle()
+end, { desc = "Toggle Float Terminal" })
 
 -- file tree
 vim.keymap.set("n", "<leader>e", function()
-  require("nvim-tree.api").tree.toggle()
+  require("plugins").toggle_tree()
 end, { desc = "Toggle NvimTree" })
 
 -- file format
 vim.keymap.set('n', '<leader>fm', function()
-  vim.lsp.buf.format()
+  require("core.lsp").format()
 end, { desc = 'Format file', silent = true })
 
 -- LSP
-vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { desc = 'Go to definition', silent = true })
-vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, { desc = 'Go to declaration', silent = true })
-vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, { desc = 'Go to implementation', silent = true })
-vim.keymap.set('n', 'gr', vim.lsp.buf.references, { desc = 'Find references', silent = true })
-vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, { desc = 'Rename symbol', silent = true })
-vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, { desc = 'LSP code action', silent = true })
+vim.keymap.set('n', 'gd', function() vim.lsp.buf.definition() end, { desc = 'Go to definition', silent = true })
+vim.keymap.set('n', 'gD', function() vim.lsp.buf.declaration() end, { desc = 'Go to declaration', silent = true })
+vim.keymap.set('n', 'gi', function() vim.lsp.buf.implementation() end, { desc = 'Go to implementation', silent = true })
+vim.keymap.set('n', 'gr', function() vim.lsp.buf.references() end, { desc = 'Find references', silent = true })
+vim.keymap.set('n', '<leader>rn', function() vim.lsp.buf.rename() end, { desc = 'Rename symbol', silent = true })
+vim.keymap.set('n', '<leader>ca', function() vim.lsp.buf.code_action() end, { desc = 'LSP code action', silent = true })
 
 -- diagnostic
-vim.keymap.set('n', '<leader>dd', vim.diagnostic.open_float, { desc = 'Show diagnostic messages', silent = true })
+vim.keymap.set('n', '<leader>dd', function() vim.diagnostic.open_float() end,
+  { desc = 'Show diagnostic messages', silent = true })
 
 vim.keymap.set("n", "<leader>q", function()
   vim.diagnostic.setloclist({ open = true })

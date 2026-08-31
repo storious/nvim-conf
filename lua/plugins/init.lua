@@ -1,152 +1,328 @@
+local M = {}
 local augroup = vim.api.nvim_create_augroup("PluginConfigs", { clear = true })
+local loaded = {}
+local configured = {}
+local registered = false
 
-vim.pack.add({
+local plugin_specs = {
   "https://www.github.com/lewis6991/gitsigns.nvim",
   "https://www.github.com/echasnovski/mini.nvim",
   "https://www.github.com/ibhagwan/fzf-lua",
   "https://www.github.com/nvim-tree/nvim-tree.lua",
-  "https://github.com/sphamba/smear-cursor.nvim",
   {
     src = "https://github.com/nvim-treesitter/nvim-treesitter",
-    branch = "main",
-    build = ":TSUpdate",
+    version = "main",
   },
-  -- Language Server Protocols
   "https://www.github.com/neovim/nvim-lspconfig",
   {
     src = "https://github.com/saghen/blink.cmp",
     version = vim.version.range("1.*"),
   },
-  "https://github.com/L3MON4D3/LuaSnip",
-})
+}
 
+local plugin_names = {
+  "gitsigns.nvim",
+  "mini.nvim",
+  "fzf-lua",
+  "nvim-tree.lua",
+  "nvim-treesitter",
+  "nvim-lspconfig",
+  "blink.cmp",
+}
 
--- ============================================================================
--- PLUGIN CONFIGS
--- ============================================================================
+local function ensure_registered()
+  if registered then return end
 
---- Treesitter
-local setup_treesitter = function()
-  local treesitter = require("nvim-treesitter")
-  treesitter.setup({})
-  local ensure_installed = {
-    "vim", "vimdoc", "rust", "c", "cpp", "go", "html", "css", "lua",
-    "javascript", "json", "markdown", "python", "typescript", "bash",
-  }
-  local config = require("nvim-treesitter.config")
-  local already_installed = config.get_installed()
-  local parsers_to_install = {}
-  for _, parser in ipairs(ensure_installed) do
-    if not vim.tbl_contains(already_installed, parser) then
-      table.insert(parsers_to_install, parser)
-    end
-  end
-  if #parsers_to_install > 0 then
-    treesitter.install(parsers_to_install)
-  end
-  local ts_group = vim.api.nvim_create_augroup("TreeSitterConfig", { clear = true })
-  vim.api.nvim_create_autocmd("FileType", {
-    group = ts_group,
-    callback = function(args)
-      if vim.list_contains(treesitter.get_installed(), vim.treesitter.language.get_lang(args.match)) then
-        vim.treesitter.start(args.buf)
-      end
-    end,
-  })
+  -- A custom no-op loader installs and registers plugins without adding them
+  -- to runtimepath. The first feature used pays the package-manager cost.
+  vim.pack.add(plugin_specs, { load = function() end })
+  registered = true
 end
-setup_treesitter()
 
---- NvimTree
-require("nvim-tree").setup({
-  view = { width = 35 },
-  filters = { dotfiles = false },
-  renderer = { group_empty = true },
-})
+local function packadd(name)
+  if loaded[name] then return end
+  ensure_registered()
+  if name == "gitsigns.nvim" then
+    -- Its plugin file calls setup() with defaults. Add only the runtime path
+    -- so the custom setup below does not initialize Gitsigns twice.
+    vim.cmd.packadd({ args = { name }, bang = true })
+  else
+    vim.cmd.packadd(name)
+  end
+  loaded[name] = true
+end
 
-vim.api.nvim_set_hl(0, "NvimTreeNormalNC", { bg = "none" })
-vim.api.nvim_set_hl(0, "SignColumn", { bg = "none" })
-vim.api.nvim_set_hl(0, "NvimTreeSignColumn", { bg = "none" })
-vim.api.nvim_set_hl(0, "NvimTreeNormal", { bg = "none" })
-vim.api.nvim_set_hl(0, "NvimTreeWinSeparator", { fg = "#2a2a2a", bg = "none" })
-vim.api.nvim_set_hl(0, "NvimTreeEndOfBuffer", { bg = "none" })
+local function setup_once(key, plugin, setup)
+  if configured[key] then return end
+  configured[key] = true
 
---- Mini.nvim
-require("mini.ai").setup({})
-require("mini.comment").setup({})
-require("mini.move").setup({})
-require("mini.surround").setup({})
-require("mini.cursorword").setup({})
-require("mini.indentscope").setup({})
-require("mini.pairs").setup({})
-require("mini.trailspace").setup({})
-require("mini.bufremove").setup({})
-require("mini.notify").setup({})
-require("mini.icons").setup({})
+  local ok, result = xpcall(function()
+    packadd(plugin)
+    return setup()
+  end, debug.traceback)
 
---- Gitsigns
-require("gitsigns").setup({
-  signs = {
-    add = { text = "▏" },
-    change = { text = "▐" },
-    delete = { text = "▏" },
-    topdelete = { text = "◦" },
-    changedelete = { text = "●" },
-    untracked = { text = "○" },
-  },
-  signcolumn = true,
-  current_line_blame = false,
-})
+  if not ok then
+    configured[key] = nil
+    error(result)
+  end
 
-vim.keymap.set("n", "]h", function() require("gitsigns").next_hunk() end, { desc = "Next git hunk" })
-vim.keymap.set("n", "[h", function() require("gitsigns").prev_hunk() end, { desc = "Previous git hunk" })
-vim.keymap.set("n", "<leader>hs", function() require("gitsigns").stage_hunk() end, { desc = "Stage hunk" })
-vim.keymap.set("n", "<leader>hr", function() require("gitsigns").reset_hunk() end, { desc = "Reset hunk" })
-vim.keymap.set("n", "<leader>hp", function() require("gitsigns").preview_hunk() end, { desc = "Preview hunk" })
-vim.keymap.set("n", "<leader>hb", function() require("gitsigns").blame_line({ full = true }) end, { desc = "Blame line" })
-vim.keymap.set("n", "<leader>hB", function() require("gitsigns").toggle_current_line_blame() end,
+  return result
+end
+
+vim.api.nvim_create_user_command("PackUpdate", function()
+  ensure_registered()
+  vim.pack.update(plugin_names)
+end, { desc = "Update configured plugins" })
+
+local function setup_icons()
+  setup_once("mini.icons", "mini.nvim", function()
+    local icons = require("mini.icons")
+    icons.setup({})
+    icons.mock_nvim_web_devicons()
+  end)
+end
+
+local function setup_mini_ai()
+  setup_once("mini.ai", "mini.nvim", function()
+    require("mini.ai").setup({})
+  end)
+end
+
+local function setup_mini_surround()
+  setup_once("mini.surround", "mini.nvim", function()
+    require("mini.surround").setup({})
+  end)
+end
+
+local function setup_mini_extras()
+  setup_once("mini.extras", "mini.nvim", function()
+    local indentscope = require("mini.indentscope")
+    indentscope.setup({
+      draw = {
+        animation = indentscope.gen_animation.none(),
+        delay = 120,
+      },
+      options = { n_lines = 500 },
+    })
+    require("mini.trailspace").setup({})
+    require("mini.notify").setup({})
+  end)
+end
+
+local function setup_mini_pairs()
+  setup_once("mini.pairs", "mini.nvim", function()
+    require("mini.pairs").setup({})
+  end)
+end
+
+local function setup_gitsigns()
+  setup_once("gitsigns", "gitsigns.nvim", function()
+    require("gitsigns").setup({
+      signs = {
+        add = { text = "▏" },
+        change = { text = "▐" },
+        delete = { text = "▏" },
+        topdelete = { text = "◦" },
+        changedelete = { text = "●" },
+        untracked = { text = "○" },
+      },
+      signcolumn = true,
+      current_line_blame = false,
+      auto_attach = false,
+      on_attach = function(bufnr)
+        return not vim.b[bufnr].large_file
+      end,
+    })
+  end)
+end
+
+local function setup_fzf()
+  setup_icons()
+  setup_once("fzf-lua", "fzf-lua", function()
+    require("fzf-lua").setup({})
+  end)
+  return require("fzf-lua")
+end
+
+function M.fzf(action, opts)
+  return setup_fzf()[action](opts)
+end
+
+function M.toggle_tree()
+  setup_icons()
+  setup_once("nvim-tree", "nvim-tree.lua", function()
+    local function on_attach(bufnr)
+      local api = require("nvim-tree.api")
+      api.map.on_attach.default(bufnr)
+      vim.keymap.set("n", "<leader>e", api.tree.close, {
+        buffer = bufnr,
+        desc = "Close file tree",
+        nowait = true,
+        silent = true,
+      })
+    end
+
+    require("nvim-tree").setup({
+      on_attach = on_attach,
+      view = { width = 35 },
+      filters = { dotfiles = false },
+      renderer = { group_empty = true },
+    })
+
+    vim.api.nvim_set_hl(0, "NvimTreeNormalNC", { bg = "none" })
+    vim.api.nvim_set_hl(0, "SignColumn", { bg = "none" })
+    vim.api.nvim_set_hl(0, "NvimTreeSignColumn", { bg = "none" })
+    vim.api.nvim_set_hl(0, "NvimTreeNormal", { bg = "none" })
+    vim.api.nvim_set_hl(0, "NvimTreeWinSeparator", { fg = "#2a2a2a", bg = "none" })
+    vim.api.nvim_set_hl(0, "NvimTreeEndOfBuffer", { bg = "none" })
+  end)
+  require("nvim-tree.api").tree.toggle()
+end
+
+local function gitsigns(action, ...)
+  setup_gitsigns()
+  return require("gitsigns")[action](...)
+end
+
+vim.keymap.set("n", "]h", function() gitsigns("next_hunk") end, { desc = "Next git hunk" })
+vim.keymap.set("n", "[h", function() gitsigns("prev_hunk") end, { desc = "Previous git hunk" })
+vim.keymap.set("n", "<leader>hs", function() gitsigns("stage_hunk") end, { desc = "Stage hunk" })
+vim.keymap.set("n", "<leader>hr", function() gitsigns("reset_hunk") end, { desc = "Reset hunk" })
+vim.keymap.set("n", "<leader>hp", function() gitsigns("preview_hunk") end, { desc = "Preview hunk" })
+vim.keymap.set("n", "<leader>hb", function() gitsigns("blame_line", { full = true }) end, { desc = "Blame line" })
+vim.keymap.set("n", "<leader>hB", function() gitsigns("toggle_current_line_blame") end,
   { desc = "Toggle inline blame" })
-vim.keymap.set("n", "<leader>hd", function() require("gitsigns").diffthis() end, { desc = "Diff this" })
+vim.keymap.set("n", "<leader>hd", function() gitsigns("diffthis") end, { desc = "Diff this" })
 
---- Fzf-Lua
-require("fzf-lua").setup({})
-vim.keymap.set("n", "<leader>ff", function() require("fzf-lua").files() end, { desc = "FZF Files" })
-vim.keymap.set("n", "<leader>fg", function() require("fzf-lua").live_grep() end, { desc = "FZF Live Grep" })
-vim.keymap.set("n", "<leader>fb", function() require("fzf-lua").buffers() end, { desc = "FZF Buffers" })
-vim.keymap.set("n", "<leader>fh", function() require("fzf-lua").help_tags() end, { desc = "FZF Help Tags" })
-vim.keymap.set("n", "<leader>fx", function() require("fzf-lua").diagnostics_document() end,
+vim.keymap.set("n", "<leader>ff", function() M.fzf("files") end, { desc = "FZF Files" })
+vim.keymap.set("n", "<leader>fg", function() M.fzf("live_grep") end, { desc = "FZF Live Grep" })
+vim.keymap.set("n", "<leader>fb", function() M.fzf("buffers") end, { desc = "FZF Buffers" })
+vim.keymap.set("n", "<leader>fh", function() M.fzf("help_tags") end, { desc = "FZF Help Tags" })
+vim.keymap.set("n", "<leader>fx", function() M.fzf("diagnostics_document") end,
   { desc = "FZF Diagnostics Document" })
-vim.keymap.set("n", "<leader>fX", function() require("fzf-lua").diagnostics_workspace() end,
+vim.keymap.set("n", "<leader>fX", function() M.fzf("diagnostics_workspace") end,
   { desc = "FZF Diagnostics Workspace" })
 
---- LSP
-local diagnostic_signs = { Error = " ", Warn = " ", Hint = "", Info = " " }
-vim.diagnostic.config({
-  virtual_text = { prefix = "●", spacing = 4 },
-  signs = {
-    text = {
-      [vim.diagnostic.severity.ERROR] = diagnostic_signs.Error,
-      [vim.diagnostic.severity.WARN] = diagnostic_signs.Warn,
-      [vim.diagnostic.severity.INFO] = diagnostic_signs.Info,
-      [vim.diagnostic.severity.HINT] = diagnostic_signs.Hint,
-    },
-  },
-  underline = true,
-  update_in_insert = false,
-  severity_sort = true,
-  float = { border = "rounded", source = "always", header = "", prefix = "", focusable = false, style = "minimal" },
+local parser_by_filetype = {
+  bash = "bash",
+  c = "c",
+  cpp = "cpp",
+  css = "css",
+  go = "go",
+  help = "vimdoc",
+  html = "html",
+  javascript = "javascript",
+  javascriptreact = "javascript",
+  json = "json",
+  jsonc = "json",
+  lua = "lua",
+  markdown = "markdown",
+  python = "python",
+  rust = "rust",
+  sh = "bash",
+  typescript = "typescript",
+  vim = "vim",
+  zsh = "bash",
+}
+
+local parser_installing = {}
+local parser_waiting = {}
+
+local function try_start_treesitter(buf, lang)
+  if not vim.api.nvim_buf_is_valid(buf)
+      or vim.b[buf].large_file
+      or parser_by_filetype[vim.bo[buf].filetype] ~= lang
+      or vim.treesitter.highlighter.active[buf] then
+    return true
+  end
+
+  local ok, available = pcall(vim.treesitter.language.add, lang)
+  if not ok or not available then return false end
+
+  pcall(vim.treesitter.start, buf, lang)
+  return true
+end
+
+local function install_parser(buf, lang)
+  if not vim.api.nvim_buf_is_valid(buf) or vim.b[buf].large_file then return end
+
+  parser_waiting[lang] = parser_waiting[lang] or {}
+  parser_waiting[lang][buf] = true
+  if parser_installing[lang] then return end
+
+  local ok, task = pcall(function()
+    setup_once("treesitter.install", "nvim-treesitter", function()
+      require("nvim-treesitter").setup({})
+    end)
+    return require("nvim-treesitter").install({ lang })
+  end)
+
+  if not ok or type(task) ~= "table" or type(task.await) ~= "function" then
+    parser_waiting[lang] = nil
+    return
+  end
+
+  parser_installing[lang] = task
+  task:await(function(err, installed)
+    local waiting = parser_waiting[lang] or {}
+    parser_installing[lang] = nil
+    parser_waiting[lang] = nil
+    if err or not installed then return end
+
+    vim.schedule(function()
+      for waiting_buf in pairs(waiting) do
+        try_start_treesitter(waiting_buf, lang)
+      end
+    end)
+  end)
+end
+
+local function start_treesitter(buf, lang)
+  if try_start_treesitter(buf, lang) then return end
+  vim.defer_fn(function() install_parser(buf, lang) end, 200)
+end
+
+vim.api.nvim_create_autocmd("FileType", {
+  group = augroup,
+  callback = function(args)
+    local lang = parser_by_filetype[args.match]
+    if not lang then return end
+
+    local buf = args.buf
+    local filetype = args.match
+    vim.schedule(function()
+      if vim.api.nvim_buf_is_valid(buf)
+          and not vim.b[buf].large_file
+          and vim.bo[buf].filetype == filetype then
+        start_treesitter(buf, lang)
+      end
+    end)
+  end,
 })
 
-do
-  local orig = vim.lsp.util.open_floating_preview
-  function vim.lsp.util.open_floating_preview(contents, syntax, opts, ...)
-    opts = opts or {}
-    opts.border = opts.border or "rounded"
-    return orig(contents, syntax, opts, ...)
-  end
+local function setup_completion()
+  setup_once("blink.cmp", "blink.cmp", function()
+    require("blink.cmp").setup({
+      keymap = {
+        preset = "none",
+        ["<C-Space>"] = { "show", "hide" },
+        ["<CR>"] = { "accept", "fallback" },
+        ["<C-n>"] = { "select_next", "fallback" },
+        ["<C-p>"] = { "select_prev", "fallback" },
+        ["<Tab>"] = { "snippet_forward", "fallback" },
+        ["<S-Tab>"] = { "snippet_backward", "fallback" },
+      },
+      appearance = { nerd_font_variant = "mono" },
+      completion = { menu = { auto_show = true } },
+      sources = { default = { "lsp", "path", "buffer", "snippets" } },
+      fuzzy = { implementation = "prefer_rust", prebuilt_binaries = { download = true } },
+    })
+  end)
+  return require("blink.cmp")
 end
 
 local function lsp_on_attach(ev)
-  vim.lsp.inlay_hint.enable(true)
+  vim.lsp.inlay_hint.enable(true, { bufnr = ev.buf })
 
   local client = vim.lsp.get_client_by_id(ev.data.client_id)
   if not client then return end
@@ -154,23 +330,23 @@ local function lsp_on_attach(ev)
   local opts = { noremap = true, silent = true, buffer = bufnr }
 
   vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
-  vim.keymap.set("n", "<leader>fd", function() require("fzf-lua").lsp_definitions({ jump_to_single_result = true }) end,
-    opts)
-  vim.keymap.set("n", "<leader>fr", function() require("fzf-lua").lsp_references() end, opts)
-  vim.keymap.set("n", "<leader>ft", function() require("fzf-lua").lsp_typedefs() end, opts)
-  vim.keymap.set("n", "<leader>fs", function() require("fzf-lua").lsp_document_symbols() end, opts)
-  vim.keymap.set("n", "<leader>fw", function() require("fzf-lua").lsp_workspace_symbols() end, opts)
-  vim.keymap.set("n", "<leader>fi", function() require("fzf-lua").lsp_implementations() end, opts)
+  vim.keymap.set("n", "<leader>fd", function()
+    M.fzf("lsp_definitions", { jump_to_single_result = true })
+  end, opts)
+  vim.keymap.set("n", "<leader>fr", function() M.fzf("lsp_references") end, opts)
+  vim.keymap.set("n", "<leader>ft", function() M.fzf("lsp_typedefs") end, opts)
+  vim.keymap.set("n", "<leader>fs", function() M.fzf("lsp_document_symbols") end, opts)
+  vim.keymap.set("n", "<leader>fw", function() M.fzf("lsp_workspace_symbols") end, opts)
+  vim.keymap.set("n", "<leader>fi", function() M.fzf("lsp_implementations") end, opts)
 
   if client:supports_method("textDocument/codeAction", bufnr) then
     vim.keymap.set("n", "<leader>oi", function()
       vim.lsp.buf.code_action({
         context = { only = { "source.organizeImports" }, diagnostics = {} },
         apply = true,
-        bufnr =
-            bufnr
+        bufnr = bufnr,
       })
-      vim.defer_fn(function() vim.lsp.buf.format({ bufnr = bufnr }) end, 50)
+      vim.defer_fn(function() require("core.lsp").format(bufnr) end, 50)
     end, opts)
   end
 end
@@ -180,38 +356,156 @@ vim.api.nvim_create_autocmd("LspAttach", {
   callback = lsp_on_attach,
 })
 
-require("blink.cmp").setup({
-  keymap = {
-    preset = "none",
-    ["<C-Space>"] = { "show", "hide" },
-    ["<CR>"] = { "accept", "fallback" },
-    ["<C-j>"] = { "select_next", "fallback" },
-    ["<C-k>"] = { "select_prev", "fallback" },
-    ["<Tab>"] = { "snippet_forward", "fallback" },
-    ["<S-Tab>"] = { "snippet_backward", "fallback" },
-  },
-  appearance = { nerd_font_variant = "mono" },
-  completion = { menu = { auto_show = true } },
-  sources = { default = { "lsp", "path", "buffer", "snippets" } },
-  snippets = { expand = function(snippet) require("luasnip").lsp_expand(snippet) end },
-  fuzzy = { implementation = "prefer_rust", prebuilt_binaries = { download = true } },
+local function setup_lsp()
+  setup_once("lsp", "nvim-lspconfig", function()
+    local blink = setup_completion()
+    local diagnostic_signs = { Error = " ", Warn = " ", Hint = "", Info = " " }
+
+    vim.diagnostic.config({
+      virtual_text = { prefix = "●", spacing = 4 },
+      signs = {
+        text = {
+          [vim.diagnostic.severity.ERROR] = diagnostic_signs.Error,
+          [vim.diagnostic.severity.WARN] = diagnostic_signs.Warn,
+          [vim.diagnostic.severity.INFO] = diagnostic_signs.Info,
+          [vim.diagnostic.severity.HINT] = diagnostic_signs.Hint,
+        },
+      },
+      underline = true,
+      update_in_insert = false,
+      severity_sort = true,
+      float = {
+        border = "rounded",
+        source = "always",
+        header = "",
+        prefix = "",
+        focusable = false,
+        style = "minimal",
+      },
+    })
+
+    vim.lsp.config["*"] = { capabilities = blink.get_lsp_capabilities() }
+    vim.lsp.config("lua_ls", {
+      settings = { Lua = { diagnostics = { globals = { "vim" } }, telemetry = { enable = false } } },
+    })
+  end)
+end
+
+local lsp_by_filetype = {
+  lua = { name = "lua_ls", executable = "lua-language-server" },
+  c = { name = "clangd", executable = "clangd" },
+  cpp = { name = "clangd", executable = "clangd" },
+  objc = { name = "clangd", executable = "clangd" },
+  objcpp = { name = "clangd", executable = "clangd" },
+  cuda = { name = "clangd", executable = "clangd" },
+}
+
+local function start_lsp(buf, filetype)
+  local server = lsp_by_filetype[filetype]
+  if vim.b[buf].large_file
+      or not server
+      or vim.fn.executable(server.executable) ~= 1 then
+    return
+  end
+
+  setup_lsp()
+  local config = vim.lsp.config[server.name]
+  if not config then return end
+
+  local function launch(root_dir)
+    if not vim.api.nvim_buf_is_valid(buf) or vim.b[buf].large_file then return end
+
+    local resolved = vim.deepcopy(config)
+    resolved.root_dir = root_dir
+    vim.lsp.start(resolved, {
+      bufnr = buf,
+      reuse_client = config.reuse_client,
+    })
+  end
+
+  if type(config.root_dir) == "function" then
+    config.root_dir(buf, launch)
+  else
+    local root_dir = config.root_dir
+    if not root_dir and config.root_markers then
+      root_dir = vim.fs.root(buf, config.root_markers)
+    end
+    launch(root_dir)
+  end
+end
+
+vim.api.nvim_create_autocmd("FileType", {
+  group = augroup,
+  pattern = { "lua", "c", "cpp", "objc", "objcpp", "cuda" },
+  callback = function(args)
+    local buf = args.buf
+    local filetype = args.match
+
+    local function start()
+      if not vim.api.nvim_buf_is_valid(buf)
+          or vim.b[buf].large_file
+          or vim.bo[buf].filetype ~= filetype then
+        return
+      end
+      start_lsp(buf, filetype)
+    end
+
+    if vim.v.vim_did_enter == 1 then
+      vim.schedule(start)
+    else
+      vim.api.nvim_create_autocmd("VimEnter", {
+        group = augroup,
+        once = true,
+        callback = function()
+          vim.schedule(start)
+        end,
+      })
+    end
+  end,
 })
 
-
-vim.lsp.config["*"] = { capabilities = require("blink.cmp").get_lsp_capabilities() }
-
-vim.lsp.config("lua_ls", {
-  settings = { Lua = { diagnostics = { globals = { "vim" } }, telemetry = { enable = false } } },
+vim.api.nvim_create_autocmd("InsertEnter", {
+  group = augroup,
+  callback = function(args)
+    if vim.b[args.buf].large_file then return end
+    setup_completion()
+    pcall(vim.api.nvim_del_autocmd, args.id)
+  end,
 })
 
-local servers = { "lua_ls", "clangd" }
+vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile", "BufFilePost", "BufWritePost" }, {
+  group = augroup,
+  callback = function(args)
+    if vim.b[args.buf].large_file then return end
 
-vim.lsp.enable(servers)
-
-
---- cursor
-require("smear_cursor").setup({
-  stiffness = 0.8,
-  trailing_stiffness = 0.5,
-  distance_stop_animating = 0.5
+    local buf = args.buf
+    local event = args.event
+    vim.defer_fn(function()
+      if vim.api.nvim_buf_is_valid(buf) and not vim.b[buf].large_file then
+        setup_gitsigns()
+        require("gitsigns").attach(buf, nil, event)
+      end
+    end, 80)
+  end,
 })
+
+vim.api.nvim_create_autocmd("VimEnter", {
+  group = augroup,
+  once = true,
+  callback = function()
+    vim.schedule(setup_mini_ai)
+    vim.defer_fn(setup_mini_surround, 40)
+    vim.defer_fn(setup_mini_extras, 120)
+  end,
+})
+
+vim.api.nvim_create_autocmd("InsertEnter", {
+  group = augroup,
+  callback = function(args)
+    if vim.b[args.buf].large_file then return end
+    setup_mini_pairs()
+    pcall(vim.api.nvim_del_autocmd, args.id)
+  end,
+})
+
+return M

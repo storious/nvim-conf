@@ -41,25 +41,32 @@ A simple Neovim configuration for personal development.
     [ -d ~/.config/nvim ] && mv ~/.config/nvim ~/.config/nvim.bak
     git clone https://github.com/storious/nvim-conf.git ~/.config/nvim
     ```
+## Plugin Management
+Plugins are loaded on first use or shortly after the first screen is drawn. Run `:PackUpdate` to update the configured plugins. Tree-sitter uses installed parsers directly and installs a missing parser only when that language is opened.
+## LSP
+`lua-language-server` and `clangd` start only when their executables are available. Missing servers are skipped silently, and format-on-save runs only when the current buffer has an attached formatter.
+## Large Files
+Files at least 2 MiB or 50,000 lines automatically use a lightweight mode. Tree-sitter, LSP, Gitsigns, indentation guides, pair insertion, and trailing-space highlighting are skipped without changing window-local display settings.
 ## Keymaps
 ### General
 | Key | Action |
 | :--- | :--- |
 | `<leader>w` | Save file |
 | `<leader>x` | Close buffer (force close in terminal) |
-| `<leader>e` | Open file explorer |
+| `<leader>e` | Toggle file explorer |
 | `<leader>fm` | Format code |
 ### Buffer & Tab
 | Key | Action |
 | :--- | :--- |
 | `]b` / `[b` | Next / Previous buffer |
-| `Tab` / `S-Tab` | Next / Previous tab |
-| `<leader>tn` | New tab |
+| `<leader>tn` / `<leader>tp` | Next / Previous tab |
+| `<leader>tb` | New tab |
 | `<leader>tc` | Close tab |
 ### Window & Terminal
 | Key | Action |
 | :--- | :--- |
-| `<M-h/j/k/l>` | Navigate windows |
+| `<C-h/j/k/l>` | Navigate windows |
+| `<M-j/k>` | Move line or selection |
 | `<leader>tt` | Open terminal in new tab |
 | `<leader>tv` | Open terminal in vertical split |
 | `<M-i>`      | Toggle float terminal |

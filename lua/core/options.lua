@@ -13,16 +13,17 @@ vim.opt.smartcase = true
 vim.opt.hlsearch = false
 vim.opt.incsearch = true
 vim.opt.foldmethod = 'expr'
-vim.opt.foldexpr = 'nvim_treesitter#foldexpr()'
+vim.opt.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
 vim.opt.foldlevel = 99
+vim.opt.foldenable = false -- avoid computing folds during the initial draw
 vim.opt.showmode = false
 vim.opt.showcmd = false
 
 vim.opt.wildmenu = true                -- tab completion
 vim.opt.wildmode = "longest:full,full" -- complete longest common match, full completion list, cycle through with Tab
 vim.opt.diffopt:append("linematch:60") -- improve diff display
-vim.opt.redrawtime = 10000             -- increase neovim redraw tolerance
-vim.opt.maxmempattern = 20000          -- increase max memory
+vim.opt.redrawtime = 2000              -- bound slow redraw expressions
+vim.opt.maxmempattern = 1000           -- bound pathological regex memory use
 
 -- terminal
 if vim.fn.has("win32") == 1 then

@@ -62,37 +62,49 @@ local function get_git_info()
 end
 
 -- 3. Statusline content
+local mode_config = {
+  n = { name = "NORMAL", hl = "SLModeNormal" },
+  no = { name = "O-PENDING", hl = "SLModeNormal" },
+  nov = { name = "O-PENDING", hl = "SLModeNormal" },
+  noV = { name = "O-PENDING", hl = "SLModeNormal" },
+  i = { name = "INSERT", hl = "SLModeInsert" },
+  ic = { name = "INSERT", hl = "SLModeInsert" },
+  ix = { name = "INSERT", hl = "SLModeInsert" },
+  v = { name = "VISUAL", hl = "SLModeVisual" },
+  V = { name = "V-LINE", hl = "SLModeVisual" },
+  ["\22"] = { name = "V-BLOCK", hl = "SLModeVisual" },
+  c = { name = "COMMAND", hl = "SLModeCommand" },
+  R = { name = "REPLACE", hl = "SLModeReplace" },
+  t = { name = "TERMINAL", hl = "SLModeTerminal" },
+}
+
+local function path_tail(path)
+  return path:match("[^/\\]+$") or path
+end
+
+local cwd_name = path_tail(vim.uv.cwd() or "")
+local path_display = cwd_name
+
+local function update_path_display()
+  local filename = path_tail(vim.api.nvim_buf_get_name(0))
+  path_display = filename == "" and cwd_name or (cwd_name .. " / " .. filename)
+end
+
+vim.api.nvim_create_autocmd({ "BufEnter", "BufFilePost", "DirChanged" }, {
+  callback = function(event)
+    if event.event == "DirChanged" then
+      cwd_name = path_tail(vim.uv.cwd() or "")
+    end
+    update_path_display()
+  end,
+})
+update_path_display()
+
 _G.StatusLine = function()
   local mode = vim.fn.mode()
-
-  -- Mode mapping
-  local mode_config = {
-    ['n']   = { name = 'NORMAL', hl = 'SLModeNormal' },
-    ['no']  = { name = 'O-PENDING', hl = 'SLModeNormal' },
-    ['nov'] = { name = 'O-PENDING', hl = 'SLModeNormal' },
-    ['noV'] = { name = 'O-PENDING', hl = 'SLModeNormal' },
-    ['i']   = { name = 'INSERT', hl = 'SLModeInsert' },
-    ['ic']  = { name = 'INSERT', hl = 'SLModeInsert' },
-    ['ix']  = { name = 'INSERT', hl = 'SLModeInsert' },
-    ['v']   = { name = 'VISUAL', hl = 'SLModeVisual' },
-    ['V']   = { name = 'V-LINE', hl = 'SLModeVisual' },
-    ['\22'] = { name = 'V-BLOCK', hl = 'SLModeVisual' },
-    ['c']   = { name = 'COMMAND', hl = 'SLModeCommand' },
-    ['R']   = { name = 'REPLACE', hl = 'SLModeReplace' },
-    ['t']   = { name = 'TERMINAL', hl = 'SLModeTerminal' },
-  }
-
-  local current = mode_config[mode] or { name = mode, hl = 'SLModeNormal' }
-
-  -- [Modified] Path logic: CWD_Name / Filename
-  local cwd_name = vim.fn.fnamemodify(vim.fn.getcwd(), ":t") -- Get tail of CWD (Project folder name)
-  local filename = vim.fn.expand("%:t")                      -- Get only filename (no path)
-
-  -- Construct display string: "Project / file.lua"
-  -- If filename is empty (e.g. in a terminal or start screen), just show cwd
-  local path_display = cwd_name
-  if filename ~= "" then
-    path_display = cwd_name .. " / " .. filename
+  local current = mode_config[mode]
+  if not current then
+    current = { name = mode, hl = "SLModeNormal" }
   end
 
   -- Build statusline string
@@ -114,60 +126,33 @@ vim.o.statusline = "%{%v:lua.StatusLine()%}"
 -- 4. Statusline background matching
 -- Keep the main statusline background clean/transparent
 local normal_bg = vim.api.nvim_get_hl(0, { name = "Normal" }).bg
-vim.api.nvim_set_hl(0, "StatusLine", { bg = normal_bg, fg = "#888888" })
--- Remove underline if you prefer a flat look
 vim.api.nvim_set_hl(0, "StatusLine", { bg = normal_bg, fg = "#888888", underline = false })
 
--- 5. Custom Tabline
-_G.TabLine = function()
-  local s = ""
-  local current_tab = vim.fn.tabpagenr()
-  local total_tabs = vim.fn.tabpagenr('$')
+-- 5. Cache the tabline instead of rebuilding it on every redraw.
+local function update_tabline()
+  local tabpages = vim.api.nvim_list_tabpages()
+  local current_tabpage = vim.api.nvim_get_current_tabpage()
+  local parts = {}
 
-  for i = 1, total_tabs do
-    local winnr = vim.fn.tabpagewinnr(i)
-    local buflist = vim.fn.tabpagebuflist(i)
-    local bufnr = buflist[winnr]
+  for index, tabpage in ipairs(tabpages) do
+    local window = vim.api.nvim_tabpage_get_win(tabpage)
+    local buffer = vim.api.nvim_win_get_buf(window)
+    local file_name = path_tail(vim.api.nvim_buf_get_name(buffer))
+    if file_name == "" then file_name = "[Empty]" end
 
-    local file_name = ""
-    if bufnr then
-      file_name = vim.fn.bufname(bufnr)
-      if file_name == "" then
-        file_name = "[Empty]"
-      else
-        file_name = vim.fn.fnamemodify(file_name, ":t")
-      end
-    else
-      file_name = "[No Buf]"
-    end
-
-    local hl = ""
-    if i == current_tab then
-      hl = "%#SLModeNormal#"
-    else
-      hl = "%#StatusLine#"
-    end
-
-    s = s .. hl .. "%" .. i .. "T" .. " " .. i .. ": " .. file_name .. " %T"
+    local highlight = tabpage == current_tabpage and "%#SLModeNormal#" or "%#StatusLine#"
+    parts[#parts + 1] = highlight .. "%" .. index .. "T " .. index .. ": " .. file_name .. " %T"
   end
 
-  return s .. "%#StatusLine#"
+  parts[#parts + 1] = "%#StatusLine#"
+  vim.o.tabline = table.concat(parts)
+  vim.o.showtabline = #tabpages > 1 and 2 or 0
 end
 
-vim.o.tabline = "%{%v:lua.TabLine()%}"
-
--- 6. auto hidden/show Tabline
-vim.api.nvim_create_autocmd({ "TabEnter", "TabLeave", "TabNew", "TabClosed" }, {
-  callback = function()
-    if vim.fn.tabpagenr('$') > 1 then
-      vim.o.showtabline = 2
-    else
-      vim.o.showtabline = 0
-    end
-  end,
+vim.api.nvim_create_autocmd({ "BufDelete", "BufEnter", "BufFilePost", "TabEnter", "TabNew", "TabClosed", "WinEnter" }, {
+  callback = update_tabline,
 })
-
-if vim.fn.tabpagenr('$') > 1 then vim.o.showtabline = 2 else vim.o.showtabline = 0 end
+update_tabline()
 
 
 local float_bg = "#1e1e1e"
