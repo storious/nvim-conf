@@ -36,7 +36,23 @@ vim.keymap.set("v", "<M-k>", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
 -- buffer navigation
 vim.keymap.set('n', ']b', ':bnext<CR>', { desc = 'Next buffer', silent = true })
 vim.keymap.set('n', '[b', ':bprevious<CR>', { desc = 'Previous buffer', silent = true })
-vim.keymap.set('n', '<leader>r', ':checktime<CR>', { desc = 'Previous buffer', silent = true })
+vim.keymap.set('n', '<leader>r', ':checktime<CR>', { desc = 'Check for external file changes', silent = true })
+
+-- Keep the selection available for repeated indentation adjustments.
+vim.keymap.set('x', '<', '<gv', { desc = 'Indent left and keep selection', silent = true })
+vim.keymap.set('x', '>', '>gv', { desc = 'Indent right and keep selection', silent = true })
+
+-- Display toggles affect only the current window or buffer.
+vim.keymap.set('n', '<leader>uw', function()
+  vim.wo.wrap = not vim.wo.wrap
+end, { desc = 'Toggle line wrap', silent = true })
+vim.keymap.set('n', '<leader>ul', function()
+  vim.wo.list = not vim.wo.list
+end, { desc = 'Toggle whitespace characters', silent = true })
+vim.keymap.set('n', '<leader>uh', function()
+  local filter = { bufnr = vim.api.nvim_get_current_buf() }
+  vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled(filter), filter)
+end, { desc = 'Toggle LSP inlay hints', silent = true })
 
 -- buffer close
 vim.keymap.set('n', '<leader>x', function()

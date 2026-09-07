@@ -49,7 +49,9 @@ M.toggle = function()
     row = row,
     col = col,
     style = "minimal",
-    border = { "╔", "═", "╗", "║", "╝", "═", "╚", "║" },
+    border = "rounded",
+    title = " Terminal ",
+    title_pos = "center",
   })
 
   -- 5. Setting window option

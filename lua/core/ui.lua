@@ -2,6 +2,7 @@
 
 -- 1. global statusline
 vim.o.laststatus = 3
+local augroup = vim.api.nvim_create_augroup("CoreUI", { clear = true })
 
 -- 2. Define custom highlight groups for modes (Monokai Style)
 local function setup_colors()
@@ -29,6 +30,35 @@ local function setup_colors()
   vim.api.nvim_set_hl(0, "SLGitAdd", { fg = "#a6e22e", bg = "NONE" })    -- Green
   vim.api.nvim_set_hl(0, "SLGitChange", { fg = "#e6db74", bg = "NONE" }) -- Yellow
   vim.api.nvim_set_hl(0, "SLGitDel", { fg = "#f92672", bg = "NONE" })    -- Red
+
+  -- Static decorations only: no timers, file scans or extra plugin loads.
+  local bg = vim.api.nvim_get_hl(0, { name = "Normal", link = false }).bg
+  local highlights = {
+    StatusLine = { bg = bg, fg = "#b6b6a8" },
+    StatusLineNC = { bg = bg, fg = "#75715e" },
+    SLPosition = { bg = "#36372f", fg = "#f8f8f2" },
+    LineNr = { fg = "#75715e", bg = bg },
+    CursorLineNr = { fg = "#e6db74", bold = true },
+    CursorLine = { bg = "#303129" },
+    SignColumn = { bg = bg },
+    WinSeparator = { fg = "#494b40", bg = bg },
+    NormalFloat = { bg = "#20211c", fg = "#f8f8f2" },
+    FloatBorder = { bg = "#20211c", fg = "#75715e" },
+    FloatTitle = { bg = "#20211c", fg = "#66d9ef", bold = true },
+    Pmenu = { bg = "#20211c", fg = "#f8f8f2" },
+    PmenuSel = { bg = "#494b40", fg = "#f8f8f2", bold = true },
+    PmenuSbar = { bg = "#303129" },
+    PmenuThumb = { bg = "#75715e" },
+    MiniIndentscopeSymbol = { fg = "#75715e" },
+    NvimTreeNormal = { bg = bg },
+    NvimTreeNormalNC = { bg = bg },
+    NvimTreeSignColumn = { bg = bg },
+    NvimTreeWinSeparator = { link = "WinSeparator" },
+    NvimTreeEndOfBuffer = { fg = bg, bg = bg },
+  }
+  for name, spec in pairs(highlights) do
+    vim.api.nvim_set_hl(0, name, spec)
+  end
 end
 
 -- Run setup
@@ -36,16 +66,21 @@ setup_colors()
 
 -- Re-apply colors when colorscheme changes
 vim.api.nvim_create_autocmd("ColorScheme", {
+  group = augroup,
   pattern = "*",
   callback = setup_colors,
 })
 
 -- Git branch status
+local function escape(text)
+  return (text:gsub("%%", "%%%%"))
+end
+
 local function get_git_info()
   local dict = vim.b.gitsigns_status_dict
   if not dict or not dict.head then return "" end
 
-  local result = "%#SLGitBranch#" .. " \u{e725} " .. dict.head .. " "
+  local result = "%#SLGitBranch# git:" .. escape(dict.head) .. " "
 
   if dict.added and dict.added > 0 then
     result = result .. "%#SLGitAdd#" .. " +" .. dict.added
@@ -91,6 +126,7 @@ local function update_path_display()
 end
 
 vim.api.nvim_create_autocmd({ "BufEnter", "BufFilePost", "DirChanged" }, {
+  group = augroup,
   callback = function(event)
     if event.event == "DirChanged" then
       cwd_name = path_tail(vim.uv.cwd() or "")
@@ -112,21 +148,16 @@ _G.StatusLine = function()
     "%#", current.hl, "#",   -- Start custom highlight
     "  ", current.name, " ", -- Mode name
     "%#StatusLine#",         -- Reset highlight
-    " ", path_display, " ",  -- [Replaced %f] Display new path format
+    " %<", escape(path_display), " ", -- Truncate long paths before position.
     "%h%m%r",                -- Help, Modified, Read-only flags
-    get_git_info(),          -- Add Git branch + status
+    vim.o.columns >= 90 and get_git_info() or "",
     "%=",                    -- Right align
-    "%#LineNr#",             -- Position highlight
-    " %l:%c  ",              -- Line and column
+    "%#SLPosition#",
+    " %l:%c | %p%% ",
   }
 end
 
 vim.o.statusline = "%{%v:lua.StatusLine()%}"
-
--- 4. Statusline background matching
--- Keep the main statusline background clean/transparent
-local normal_bg = vim.api.nvim_get_hl(0, { name = "Normal" }).bg
-vim.api.nvim_set_hl(0, "StatusLine", { bg = normal_bg, fg = "#888888", underline = false })
 
 -- 5. Cache the tabline instead of rebuilding it on every redraw.
 local function update_tabline()
@@ -141,32 +172,17 @@ local function update_tabline()
     if file_name == "" then file_name = "[Empty]" end
 
     local highlight = tabpage == current_tabpage and "%#SLModeNormal#" or "%#StatusLine#"
-    parts[#parts + 1] = highlight .. "%" .. index .. "T " .. index .. ": " .. file_name .. " %T"
+    local modified = vim.bo[buffer].modified and " +" or ""
+    parts[#parts + 1] = highlight .. "%" .. index .. "T " .. index .. ": " .. escape(file_name) .. modified .. " %T"
   end
 
-  parts[#parts + 1] = "%#StatusLine#"
+  parts[#parts + 1] = "%#StatusLine#%T%="
   vim.o.tabline = table.concat(parts)
   vim.o.showtabline = #tabpages > 1 and 2 or 0
 end
 
-vim.api.nvim_create_autocmd({ "BufDelete", "BufEnter", "BufFilePost", "TabEnter", "TabNew", "TabClosed", "WinEnter" }, {
+vim.api.nvim_create_autocmd({ "BufDelete", "BufEnter", "BufFilePost", "BufModifiedSet", "TabEnter", "TabNew", "TabClosed", "WinEnter" }, {
+  group = augroup,
   callback = update_tabline,
 })
 update_tabline()
-
-
-local float_bg = "#1e1e1e"
-
--- 7. Float window
-vim.api.nvim_set_hl(0, "NormalFloat", {
-  bg = float_bg,
-  fg = "#f8f8f2",
-  blend = 0
-})
-
--- 8. border
-vim.api.nvim_set_hl(0, "FloatBorder", {
-  bg = float_bg,
-  fg = "#66d9ef",
-  blend = 0
-})

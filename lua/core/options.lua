@@ -6,8 +6,17 @@ vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
 vim.opt.wrap = false
 vim.opt.scrolloff = 5
+vim.opt.sidescrolloff = 5
+vim.opt.splitright = true
+vim.opt.splitbelow = true
+vim.opt.breakindent = true -- keep indentation when wrap is enabled for a window
+vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 vim.opt.signcolumn = 'yes'
 vim.opt.winborder = 'rounded'
+vim.opt.termguicolors = true
+vim.opt.fillchars:append({ eob = ' ', vert = '│' })
+vim.opt.pumheight = 12
+vim.opt.pumblend = 0
 vim.opt.ignorecase = true
 vim.opt.smartcase = true
 vim.opt.hlsearch = false

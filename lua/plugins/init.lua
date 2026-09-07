@@ -164,17 +164,15 @@ function M.toggle_tree()
 
     require("nvim-tree").setup({
       on_attach = on_attach,
+      -- Windows can flood watchers with events after deleting expanded folders.
+      -- Use native operation/write refreshes and refresh when re-entering the tree.
+      filesystem_watchers = { enable = vim.fn.has("win32") ~= 1 },
+      reload_on_bufenter = vim.fn.has("win32") == 1,
       view = { width = 35 },
       filters = { dotfiles = false },
       renderer = { group_empty = true },
     })
 
-    vim.api.nvim_set_hl(0, "NvimTreeNormalNC", { bg = "none" })
-    vim.api.nvim_set_hl(0, "SignColumn", { bg = "none" })
-    vim.api.nvim_set_hl(0, "NvimTreeSignColumn", { bg = "none" })
-    vim.api.nvim_set_hl(0, "NvimTreeNormal", { bg = "none" })
-    vim.api.nvim_set_hl(0, "NvimTreeWinSeparator", { fg = "#2a2a2a", bg = "none" })
-    vim.api.nvim_set_hl(0, "NvimTreeEndOfBuffer", { bg = "none" })
   end)
   require("nvim-tree.api").tree.toggle()
 end
@@ -313,7 +311,19 @@ local function setup_completion()
         ["<S-Tab>"] = { "snippet_backward", "fallback" },
       },
       appearance = { nerd_font_variant = "mono" },
-      completion = { menu = { auto_show = true } },
+      completion = {
+        menu = {
+          auto_show = true,
+          border = "rounded",
+          winhighlight = "Normal:Pmenu,FloatBorder:FloatBorder,CursorLine:PmenuSel,Search:None",
+        },
+        documentation = {
+          window = {
+            border = "rounded",
+            winhighlight = "Normal:NormalFloat,FloatBorder:FloatBorder,EndOfBuffer:NormalFloat",
+          },
+        },
+      },
       sources = { default = { "lsp", "path", "buffer", "snippets" } },
       fuzzy = { implementation = "prefer_rust", prebuilt_binaries = { download = true } },
     })
@@ -359,7 +369,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
 local function setup_lsp()
   setup_once("lsp", "nvim-lspconfig", function()
     local blink = setup_completion()
-    local diagnostic_signs = { Error = " ", Warn = " ", Hint = "", Info = " " }
+    local diagnostic_signs = { Error = "E", Warn = "W", Hint = "H", Info = "I" }
 
     vim.diagnostic.config({
       virtual_text = { prefix = "●", spacing = 4 },
